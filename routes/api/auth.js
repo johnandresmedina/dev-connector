@@ -11,7 +11,7 @@ const router = express.Router();
 
 // @route GET api/auth
 // @desc Test route
-// @access Public
+// @access Private
 router.get("/", auth, async (request, response) => {
   try {
     const user = await User.findById(request.user.id).select("-password");
@@ -22,6 +22,9 @@ router.get("/", auth, async (request, response) => {
   }
 });
 
+// @route GET api/auth
+// @desc Login user
+// @access Public
 router.post(
   "/",
   [

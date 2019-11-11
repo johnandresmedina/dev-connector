@@ -3,6 +3,7 @@ const { check, validationResult } = require("express-validator");
 
 const auth = require("../../middleware/auth");
 const Profile = require("../../models/Profile");
+const User = require("../../models/User");
 
 const router = express.Router();
 
@@ -97,7 +98,7 @@ router.post(
           {
             $set: profileFields
           },
-          { new: true, useFindAndModify: false }
+          { new: true }
         );
       } else {
         profile = new Profile(profileFields);
@@ -111,5 +112,61 @@ router.post(
     }
   }
 );
+
+// @route GET api/profile
+// @desc Get all profiles
+// @access Public
+router.get("/", async (request, response) => {
+  try {
+    const profiles = await Profile.find().populate("user", ["name", "avatar"]);
+    response.json(profiles);
+  } catch (error) {
+    console.error(error.message);
+    response.status(500).send("Server error");
+  }
+});
+
+// @route GET api/profile/user/:user_id
+// @desc Get a profile by user id
+// @access Public
+router.get("/user/:user_id", async (request, response) => {
+  try {
+    const profile = await Profile.findOne({
+      user: request.params.user_id
+    }).populate("user", ["name", "avatar"]);
+
+    if (!profile) {
+      return response
+        .status(400)
+        .json({ errors: [{ msg: "Profile not found" }] });
+    }
+
+    response.json(profile);
+  } catch (error) {
+    console.error(error.message);
+
+    if (error.kind == "ObjectId") {
+      return response
+        .status(400)
+        .json({ errors: [{ msg: "Profile not found" }] });
+    }
+    response.status(500).send("Server error");
+  }
+});
+
+// @route DELETE api/profile
+// @desc Delete profile, user & posts
+// @access Private
+router.delete("/", auth, async (request, response) => {
+  try {
+    await Profile.findOneAndRemove({ user: request.user.id });
+    await User.findOneAndRemove({ _id: request.user.id });
+
+    response.json({ msg: "User deleted" });
+  } catch (error) {
+    console.error(error.message);
+    response.status(500).send("Server error");
+  }
+});
 
 module.exports = router;

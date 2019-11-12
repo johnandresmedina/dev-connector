@@ -179,4 +179,85 @@ router.put("/unlike/:id", auth, async (request, response) => {
   }
 });
 
+// @route PUT api/posts/comment/:id
+// @desc Comment on a post
+// @access Private
+router.put(
+  "/comment/:id",
+  [
+    auth,
+    [
+      check("text", "Text is required")
+        .not()
+        .isEmpty()
+    ]
+  ],
+  async (request, response) => {
+    const errors = validationResult(request);
+
+    if (!errors.isEmpty()) {
+      return response.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      const userId = request.user.id;
+      const user = await User.findById(userId).select("-password");
+      const post = await Post.findById(request.params.id);
+
+      const { name, avatar } = user;
+
+      const newComment = {
+        text: request.body.text,
+        name,
+        avatar,
+        user: userId
+      };
+
+      post.comments.unshift(newComment);
+      await post.save();
+
+      response.json(post.comments);
+    } catch (error) {
+      console.error(error.message);
+      response.status(500).send("Server error");
+    }
+  }
+);
+
+// @route DELETE api/posts/comment/:id/:comment_id
+// @desc Delete a comment
+// @access Private
+router.delete("/comment/:id/:comment_id", auth, async (request, response) => {
+  try {
+    const post = await Post.findById(request.params.id);
+    const comment = post.comments.find(
+      comment => (comment.id = request.params.comment_id)
+    );
+
+    if (!comment) {
+      return response
+        .status(404)
+        .json({ errors: { msg: "Comment not found" } });
+    }
+
+    if (comment.user.toString() !== request.user.id) {
+      return response
+        .status(401)
+        .json({ errors: { msg: "User not authorized" } });
+    }
+
+    const removeIndex = post.comments
+      .map(comment => comment.user.toString())
+      .indexOf(request.user.id);
+
+    post.comments.splice(removeIndex, 1);
+    await post.save();
+
+    response.json(post.comments);
+  } catch (error) {
+    console.error(error.message);
+    response.status(500).send("Server error");
+  }
+});
+
 module.exports = router;

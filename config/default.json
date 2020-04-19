@@ -1,0 +1,6 @@
+{
+  "mongoURI": "PLACEHOLDER",
+  "jwtSecret": "PLACEHOLDER",
+  "githubClientId": "PLACEHOLDER",
+  "githubClientSecret": "PLACEHOLDER"
+}

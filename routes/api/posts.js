@@ -13,14 +13,7 @@ const router = express.Router();
 // @access Private
 router.post(
   "/",
-  [
-    auth,
-    [
-      check("text", "Text is required")
-        .not()
-        .isEmpty()
-    ]
-  ],
+  [auth, [check("text", "Text is required").not().isEmpty()]],
   async (request, response) => {
     const errors = validationResult(request);
 
@@ -37,7 +30,7 @@ router.post(
         text: request.body.text,
         name,
         avatar,
-        user: userId
+        user: userId,
       });
 
       const post = await newPost.save();
@@ -122,7 +115,7 @@ router.put("/like/:id", auth, async (request, response) => {
   try {
     const post = await Post.findById(request.params.id);
     if (
-      post.likes.filter(like => like.user.toString() === request.user.id)
+      post.likes.filter((like) => like.user.toString() === request.user.id)
         .length > 0
     ) {
       return response
@@ -152,7 +145,7 @@ router.put("/unlike/:id", auth, async (request, response) => {
   try {
     const post = await Post.findById(request.params.id);
     if (
-      post.likes.filter(like => like.user.toString() === request.user.id)
+      post.likes.filter((like) => like.user.toString() === request.user.id)
         .length === 0
     ) {
       return response
@@ -161,7 +154,7 @@ router.put("/unlike/:id", auth, async (request, response) => {
     }
 
     const removeIndex = post.likes
-      .map(like => like.user.toString())
+      .map((like) => like.user.toString())
       .indexOf(request.user.id);
 
     post.likes.splice(removeIndex, 1);
@@ -184,14 +177,7 @@ router.put("/unlike/:id", auth, async (request, response) => {
 // @access Private
 router.put(
   "/comment/:id",
-  [
-    auth,
-    [
-      check("text", "Text is required")
-        .not()
-        .isEmpty()
-    ]
-  ],
+  [auth, [check("text", "Text is required").not().isEmpty()]],
   async (request, response) => {
     const errors = validationResult(request);
 
@@ -210,7 +196,7 @@ router.put(
         text: request.body.text,
         name,
         avatar,
-        user: userId
+        user: userId,
       };
 
       post.comments.unshift(newComment);
@@ -231,7 +217,7 @@ router.delete("/comment/:id/:comment_id", auth, async (request, response) => {
   try {
     const post = await Post.findById(request.params.id);
     const comment = post.comments.find(
-      comment => (comment.id = request.params.comment_id)
+      (comment) => comment.id === request.params.comment_id
     );
 
     if (!comment) {
@@ -246,11 +232,8 @@ router.delete("/comment/:id/:comment_id", auth, async (request, response) => {
         .json({ errors: { msg: "User not authorized" } });
     }
 
-    const removeIndex = post.comments
-      .map(comment => comment.user.toString())
-      .indexOf(request.user.id);
+    post.comments = post.comments.filter(({ id }) => id !== comment.id);
 
-    post.comments.splice(removeIndex, 1);
     await post.save();
 
     response.json(post.comments);

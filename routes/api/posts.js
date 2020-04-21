@@ -2,6 +2,7 @@ const express = require("express");
 const { check, validationResult } = require("express-validator");
 
 const auth = require("../../middleware/auth");
+const { validateComment } = require("./validators");
 const User = require("../../models/User");
 const Post = require("../../models/Post");
 const Profile = require("../../models/Profile");
@@ -177,14 +178,8 @@ router.put("/unlike/:id", auth, async (request, response) => {
 // @access Private
 router.put(
   "/comment/:id",
-  [auth, [check("text", "Text is required").not().isEmpty()]],
+  [auth, validateComment],
   async (request, response) => {
-    const errors = validationResult(request);
-
-    if (!errors.isEmpty()) {
-      return response.status(400).json({ errors: errors.array() });
-    }
-
     try {
       const userId = request.user.id;
       const user = await User.findById(userId).select("-password");

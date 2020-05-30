@@ -2,11 +2,14 @@
   "name": "dev-conector-api",
   "version": "1.0.0",
   "description": "Social network for developer",
-  "main": "server.js",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node server",
-    "dev": "nodemon server",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint src --color",
+    "start": "node src/server",
+    "dev": "nodemon src/server",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format:check": "prettier --check \"src/**/*.{js,json,md}\"",
+    "format": "prettier --write \"src/**/*.{js,json,md}\" "
   },
   "keywords": [
     "nodejs",
@@ -27,6 +30,59 @@
     "request": "^2.88.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.3"
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.1.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-plugin-import": "^2.20.2",
+    "husky": "^4.2.5",
+    "lint-staged": "^10.2.2",
+    "nodemon": "^2.0.3",
+    "prettier": "^2.0.5"
+  },
+  "eslintConfig": {
+    "extends": [
+      "eslint:recommended",
+      "airbnb-base",
+      "prettier"
+    ],
+    "parserOptions": {
+      "ecmaVersion": 2020
+    },
+    "rules": {
+      "no-console": [
+        "error",
+        {
+          "allow": [
+            "warn",
+            "error",
+            "log"
+          ]
+        }
+      ]
+    }
+  },
+  "prettier": {
+    "printWidth": 100,
+    "trailingComma": "all",
+    "tabWidth": 2,
+    "semi": true,
+    "singleQuote": true,
+    "bracketSpacing": true,
+    "useTabs": false,
+    "arrowParens": "avoid",
+    "endOfLine": "lf"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.{js,json}": "eslint",
+    "src/**/*.{js,json,md}": "prettier --write"
+  },
+  "engines": {
+    "node": ">=12.0.0",
+    "npm": ">=6.14.4"
   }
 }

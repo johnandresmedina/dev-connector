@@ -1,8 +1,8 @@
 const express = require('express');
-const { check, validationResult } = require('express-validator');
 
 const auth = require('../../middleware/auth');
-const { validateComment } = require('./validators');
+const { verifyId } = require('../../middleware/verifyIds');
+const { validateComment, validatePost } = require('./validators');
 const User = require('../../models/User');
 const Post = require('../../models/Post');
 
@@ -11,36 +11,26 @@ const router = express.Router();
 // @route POST api/posts
 // @desc Create a post
 // @access Private
-router.post(
-  '/',
-  [auth, [check('text', 'Text is required').not().isEmpty()]],
-  async (request, response) => {
-    const errors = validationResult(request);
+router.post('/', [auth, validatePost], async (request, response) => {
+  try {
+    const { id: userId } = request.user;
+    const user = await User.findById(userId).select('-password');
+    const { name, avatar } = user;
 
-    if (!errors.isEmpty()) {
-      return response.status(400).json({ errors: errors.array() });
-    }
+    const newPost = new Post({
+      text: request.body.text,
+      name,
+      avatar,
+      user: userId,
+    });
 
-    try {
-      const userId = request.user.id;
-      const user = await User.findById(userId).select('-password');
-      const { name, avatar } = user;
-
-      const newPost = new Post({
-        text: request.body.text,
-        name,
-        avatar,
-        user: userId,
-      });
-
-      const post = await newPost.save();
-      return response.json(post);
-    } catch (error) {
-      console.error(error.message);
-      return response.status(500).send('Server error');
-    }
-  },
-);
+    const post = await newPost.save();
+    response.status(201).json(post);
+  } catch (error) {
+    console.error(error.message);
+    response.status(500).send('Server error');
+  }
+});
 
 // @route GET api/posts
 // @desc Get all posts
@@ -48,33 +38,32 @@ router.post(
 router.get('/', auth, async (request, response) => {
   try {
     const posts = await Post.find().sort({ date: -1 });
-    return response.json(posts);
+    response.status(200).json(posts);
   } catch (error) {
     console.error(error.message);
-    return response.status(500).send('Server error');
+    response.status(500).send('Server error');
   }
 });
 
 // @route GET api/posts/:id
 // @desc Get post by Id
 // @access Private
-router.get('/:id', auth, async (request, response) => {
+// eslint-disable-next-line consistent-return
+router.get('/:id', [auth, verifyId], async (request, response, next) => {
+  const { id: postId } = request.params;
+
   try {
-    const post = await Post.findById(request.params.id);
+    const post = await Post.findById(postId);
 
     if (!post) {
-      return response.status(404).json({ errors: { msg: 'Post not found' } });
+      return response
+        .status(404)
+        .json({ errors: [{ msg: `Resource with id '${postId}' was not found` }] });
     }
 
     return response.json(post);
   } catch (error) {
-    console.error(error.message);
-
-    if (error.kind === 'ObjectId') {
-      return response.status(404).json({ errors: { msg: 'Post not found' } });
-    }
-
-    return response.status(500).send('Server error');
+    next(error);
   }
 });
 

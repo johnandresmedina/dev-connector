@@ -16,4 +16,10 @@ const validateComment = async (request, response, next) => {
   validate(request, response, next);
 };
 
-module.exports = { validateComment };
+const validatePost = async (request, response, next) => {
+  await Promise.all([check('text', 'Text is required').not().isEmpty().run(request)]);
+
+  validate(request, response, next);
+};
+
+module.exports = { validateComment, validatePost };
